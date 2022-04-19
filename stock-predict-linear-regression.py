@@ -2,11 +2,16 @@
 
 import pandas as pd
 import quandl
-import math
+import math ,  datetime
 import numpy as np
 from sklearn import preprocessing, svm
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression 
+import matplotlib.pyplot as plt
+from matplotlib import style
+
+
+style.use('ggplot')
 
 #get stock price 
 stockName = "WIKI/GOOGL"#"WIKI/AAPL" #"WIKI/GOOGL"
@@ -38,18 +43,21 @@ print("Lenght of dataset: ", len(df), " ,  forecast day: ", forecastOut)
 
 #create label column shift 10 days or 10% with Adj. Close price 
 df['label']= df[forecastCol].shift(-forecastOut) 
-df.dropna(inplace=True)
+
 print(df.head())
 
 
 #define training dataset get all column for feature beside 
 X =  np.array(df.drop(['label'], 1))
-# define label for training
-y = np.array(df['label'])
-
-# normalization 
 X = preprocessing.scale(X) 
+X = X[:-forecastOut]
+XLately = X[-forecastOut:]
 
+
+
+df.dropna(inplace=True)
+
+y = np.array(df['label']) # define label for training
 # X= X[:,-forecastOut + 1]
 y = np.array(df['label'])
 print(len(X), len(y))
@@ -64,4 +72,31 @@ clf.fit(X_train, y_train) # train model
 
 accuracy = clf.score(X_test, y_test) 
 
-print(accuracy)
+# print(accuracy)
+
+# validation with new data
+forecastSet = clf.predict(XLately)
+print(forecastSet, accuracy, forecastOut)
+
+# add datetime handling
+
+df['Forecast'] = np.nan # create forecast column and fill nan value
+
+lastDate = df.iloc[-1].name #go to last column
+lastUnix = lastDate.timestamp()
+oneDay = 86400
+nextUnix = lastUnix + oneDay 
+
+for i in forecastSet:
+    nextDate = datetime.datetime.fromtimestamp(nextUnix)
+    nextUnix += oneDay
+    df.loc[nextDate] = [np.nan for  _ in range(len(df.columns)-1)] + [i] #fill nan for other column
+print(df.tail())
+    
+
+df['Adj. Close'].plot()
+df['Forecast'].plot()
+plt.legend(loc=4)
+plt.xlabel('Date')
+plt.ylabel('Price')
+plt.show()
