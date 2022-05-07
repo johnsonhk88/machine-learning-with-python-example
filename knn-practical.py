@@ -23,9 +23,10 @@ def kNN(data, predict, k=3):
             distance.append([euclideanDistances, group])
     votes =  [i[1] for i in sorted(distance)[:k]]  # sorted 
     voteResult = Counter(votes).most_common(1)[0][0]
-    # print("Votes: ", votes, "\n\rVote Result: ", Counter(votes).most_common(1))   
+    confidence = Counter(votes).most_common(1)[0][1] / k 
+    # print("Votes: ", votes, "\n\rVote Result: ", Counter(votes).most_common(1), "\n\rConfidence Result: ", confidence)   
     
-    return voteResult
+    return voteResult , confidence
 
 
 # #test knn
@@ -35,51 +36,58 @@ def kNN(data, predict, k=3):
 # plt.scatter(newFeatures[0], newFeatures[1], color=result)
 # plt.show()
 
-dataSetFile = "breast-cancer-wisconsin.data"
+accuracies = []
+for i in range(25):
+    dataSetFile = "breast-cancer-wisconsin.data"
 
-#open csv file
-df =pd.read_csv(dataSetFile)
-#data preparation (clean)
-df.replace('?', -99999, inplace=True)
-df.drop(['id'], 1, inplace=True)
+    #open csv file
+    df =pd.read_csv(dataSetFile)
+    #data preparation (clean)
+    df.replace('?', -99999, inplace=True)
+    df.drop(['id'], 1, inplace=True)
 
-print(df.head())
+    # print(df.head())
 
-fullData = df.astype(float).values.tolist() # convert to list (Float type)
-# print(fullData[:5]) #
-random.shuffle(fullData)
-# print(20*'#')
-# print(fullData[:5])
+    fullData = df.astype(float).values.tolist() # convert to list (Float type)
+    # print(fullData[:5]) #
+    random.shuffle(fullData)
+    # print(20*'#')
+    # print(fullData[:5])
 
 
 
-testSize = 0.2
-trainSet = {2:[],  4:[]}
-testSet = {2:[], 4:[]}
-trainData = fullData[:-int(testSize* len(fullData))]  # set Train Data
-testData =fullData[-int(testSize* len(fullData)):]  # set Test Data
-# print(trainData[:5])
-# print(20*'#')
-# print(testData[:5])
+    testSize = 0.4
+    trainSet = {2:[],  4:[]}
+    testSet = {2:[], 4:[]}
+    trainData = fullData[:-int(testSize* len(fullData))]  # set Train Data
+    testData =fullData[-int(testSize* len(fullData)):]  # set Test Data
+    # print(trainData[:5])
+    # print(20*'#')
+    # print(testData[:5])
 
-for i in trainData:
-    trainSet[i[-1]].append(i[:-1]) # get traindata last data for key , then append dataset
+    for i in trainData:
+        trainSet[i[-1]].append(i[:-1]) # get traindata last data for key , then append dataset
 
-for i in testData:
-    testSet[i[-1]].append(i[:-1])
+    for i in testData:
+        testSet[i[-1]].append(i[:-1])
 
-# print(trainSet)
-# print(20*'#')
-# print(testSet)
+    # print(trainSet)
+    # print(20*'#')
+    # print(testSet)
 
-correct = 0
-total = 0
+    correct = 0
+    total = 0
 
-for group in testSet: # get key
-    for data in testSet[group]: # get each key data
-        vote = kNN(trainSet, data, k=5)
-        if group == vote: #check predict correct or not
-            correct += 1 #correct counter +1 
-        total += 1
+    for group in testSet: # get key
+        for data in testSet[group]: # get each key data
+            vote , confidence = kNN(trainSet, data, k=5)
+            if group == vote: #check predict correct or not
+                correct += 1 #correct counter +1
+            # else :
+            #     print(confidence) 
+            total += 1
 
-print("Accuarcy: ", correct/total *100 , "%")
+    # print("Accuarcy: ", correct/total *100 , "%")
+    accuracies.append(correct/total)
+
+print(sum(accuracies)/ len(accuracies) *100 )
