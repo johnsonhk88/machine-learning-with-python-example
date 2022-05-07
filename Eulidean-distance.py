@@ -1,5 +1,4 @@
 
-from turtle import color
 import numpy as np
 from math import sqrt
 import matplotlib.pyplot as plt
